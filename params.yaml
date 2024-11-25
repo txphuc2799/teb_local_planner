@@ -3,7 +3,7 @@
 # forever (around 10 minutes for each iteration).
 base_local_planner: teb_local_planner/TebLocalPlannerROS
 TebLocalPlannerROS:       
-  odom_topic: /odometry/filtered
+  odom_topic: /amr/odometry/filtered
   map_frame: map
 
   # Trajectory
@@ -20,7 +20,7 @@ TebLocalPlannerROS:
   exact_arc_length: false                  
   publish_feedback: false
   # control_look_ahead_poses:   
-  # prevent_look_ahead_poses_near_goal:
+  prevent_look_ahead_poses_near_goal: 50
   visualize_with_time_as_z_axis_scale: 0.0              
   
   # Via point
@@ -38,7 +38,7 @@ TebLocalPlannerROS:
   # transform_tolerance:              
   footprint_model:
     type: "polygon"
-    vertices: [[0.22,0.22],[-0.92,0.22],[-0.92,-0.22],[0.22,-0.22]]
+    vertices: [[0.22,0.22],[-0.6,0.22],[-0.6,-0.22],[0.22,-0.22]]
 
   # Robot / Carlike
   min_turning_radius: 0.0 # 0.1                  
@@ -87,8 +87,8 @@ TebLocalPlannerROS:
   weight_acc_lim_x: 10.0 #1.0
   weight_acc_lim_y: 1.0     
   weight_acc_lim_theta: 10.0 #1.0  
-  weight_kinematics_nh: 2500.0   # 10000.0  
-  weight_kinematics_forward_drive: 1.0
+  weight_kinematics_nh: 3000.0   # 10000.0  
+  weight_kinematics_forward_drive: 1000.0
   weight_kinematics_turning_radius: 1.0
   weight_optimaltime: 10.0
   weight_shortest_path: 0.0   # Optimization weight for contracting the trajectory w.r.t. path length 
