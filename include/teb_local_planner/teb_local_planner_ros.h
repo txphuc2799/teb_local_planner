@@ -388,7 +388,11 @@ protected:
   void validateFootprints(double opt_inscribed_radius, double costmap_inscribed_radius, double min_obst_dist);
   
   
-  void configureBackupModes(std::vector<geometry_msgs::PoseStamped>& transformed_plan,  int& goal_idx);
+  void configureBackupModes(
+    std::vector<geometry_msgs::PoseStamped>& transformed_plan,
+    int& goal_idx,
+    double dx, double dy,
+    bool & is_oscillated);
 
 
   
@@ -445,6 +449,8 @@ private:
     
   // flags
   bool initialized_; //!< Keeps track about the correct initialization of this class
+  bool is_oscillated_;
+  double oscillating_distance_;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

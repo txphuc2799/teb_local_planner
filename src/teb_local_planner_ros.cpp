@@ -134,6 +134,9 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
     cfg_.map_frame = global_frame_; // TODO
     robot_base_frame_ = costmap_ros_->getBaseFrameID();
 
+    is_oscillated_ = false;
+    oscillating_distance_ = 0.15;
+
     //Initialize a costmap to polygon converter
     if (!cfg_.obstacles.costmap_converter_plugin.empty())
     {
@@ -304,8 +307,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   }
 
   // check if we should enter any backup mode and apply settings
-  configureBackupModes(transformed_plan, goal_idx);
-  
+  configureBackupModes(transformed_plan, goal_idx, dx, dy, is_oscillated_);
     
   // Return false if the transformed global plan is empty
   if (transformed_plan.empty())
@@ -452,6 +454,12 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   
   // store last command (for recovery analysis etc.)
   last_cmd_ = cmd_vel.twist;
+
+  // Check if oscillate near goal
+  if (is_oscillated_) {
+    is_oscillated_ = false;
+    goal_reached_ = true;
+  }
   
   // Now visualize everything    
   planner_->visualize();
@@ -943,7 +951,11 @@ void TebLocalPlannerROS::validateFootprints(double opt_inscribed_radius, double 
    
    
    
-void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::PoseStamped>& transformed_plan,  int& goal_idx)
+void TebLocalPlannerROS::configureBackupModes(
+  std::vector<geometry_msgs::PoseStamped>& transformed_plan,
+  int& goal_idx,
+  double dx, double dy,
+  bool & is_oscillated)
 {
     ros::Time current_time = ros::Time::now();
     
@@ -996,7 +1008,11 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::PoseSta
         if (oscillating)
         {
             if (!recently_oscillated)
-            {
+            {   
+                if (fabs(std::sqrt(dx*dx+dy*dy)) < oscillating_distance_) {
+                  is_oscillated = true;
+                }
+                              
                 // save current turning direction
                 if (robot_vel_.angular.z > 0)
                     last_preferred_rotdir_ = RotType::left;
