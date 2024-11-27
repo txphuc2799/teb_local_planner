@@ -19,8 +19,8 @@ TebLocalPlannerROS:
   # feasibility_check_lookahead_distance:           
   exact_arc_length: false                  
   publish_feedback: false
-  # control_look_ahead_poses:   
-  prevent_look_ahead_poses_near_goal: 50
+  control_look_ahead_poses: 1
+  prevent_look_ahead_poses_near_goal: 0
   visualize_with_time_as_z_axis_scale: 0.0              
   
   # Via point
@@ -125,4 +125,4 @@ TebLocalPlannerROS:
   # Recovery
   shrink_horizon_backup: true           
   oscillation_recovery: true
-  oscillation_recovery_min_duration: 10.0
+  oscillation_recovery_min_duration: 3.0
