@@ -57,6 +57,7 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/solvers/cholmod/linear_solver_cholmod.h"
 
+// #include <teb_local_planner/utils.hpp>
 
 // register this planner both as a BaseLocalPlanner and as a MBF's CostmapController plugin
 PLUGINLIB_EXPORT_CLASS(teb_local_planner::TebLocalPlannerROS, nav_core::BaseLocalPlanner)
@@ -69,7 +70,7 @@ namespace teb_local_planner
 TebLocalPlannerROS::TebLocalPlannerROS() : costmap_ros_(NULL), tf_(NULL), costmap_model_(NULL),
                                            costmap_converter_loader_("costmap_converter", "costmap_converter::BaseCostmapToPolygons"),
                                            dynamic_recfg_(NULL), custom_via_points_active_(false), goal_reached_(false), no_infeasible_plans_(0),
-                                           last_preferred_rotdir_(RotType::none), initialized_(false)
+                                           last_preferred_rotdir_(RotType::none), initialized_(false), check_xy_(true)
 {
 }
 
@@ -110,6 +111,8 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
         
     // create robot footprint/contour model for optimization
     cfg_.robot_model = getRobotFootprintFromParamServer(nh, cfg_);
+
+    has_new_goal_ = true;
     
     // create the planner instance
     if (cfg_.hcp.enable_homotopy_class_planning)
@@ -221,6 +224,22 @@ bool TebLocalPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& 
             
   // reset goal_reached_ flag
   goal_reached_ = false;
+
+  if (global_plan_.empty()) {
+    ROS_ERROR("TebLocalPlannerROS: Received plan with zero length");
+    return false;
+  }
+
+  // Save goal pose
+  goal_pose_.header.frame_id = global_plan_[0].header.frame_id;
+  goal_pose_.header.stamp = global_plan_[0].header.stamp;
+  goal_pose_.pose = global_plan_.back().pose;
+
+  if (has_new_goal_ || hasGoalChanged(goal_pose_)) {
+    last_goal_ = goal_pose_;
+    has_new_goal_ = false;
+    check_xy_ = true;
+  }
   
   return true;
 }
@@ -295,17 +314,20 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   tf2::doTransform(global_plan_.back(), global_goal, tf_plan_to_global);
   double dx = global_goal.pose.position.x - robot_pose_.x();
   double dy = global_goal.pose.position.y - robot_pose_.y();
-  double delta_orient = g2o::normalize_theta( tf2::getYaw(global_goal.pose.orientation) - robot_pose_.theta() );
-  if(fabs(std::sqrt(dx*dx+dy*dy)) < cfg_.goal_tolerance.xy_goal_tolerance
-    && fabs(delta_orient) < cfg_.goal_tolerance.yaw_goal_tolerance
-    && (!cfg_.goal_tolerance.complete_global_plan || via_points_.size() == 0)
-    && (base_local_planner::stopped(base_odom, cfg_.goal_tolerance.theta_stopped_vel, cfg_.goal_tolerance.trans_stopped_vel)
-        || cfg_.goal_tolerance.free_goal_vel))
-  {
-    goal_reached_ = true;
-    return mbf_msgs::ExePathResult::SUCCESS;
+  double delta_orient = g2o::normalize_theta(tf2::getYaw(global_goal.pose.orientation) - robot_pose_.theta());
+  
+  // Check if reached xy
+  if (isReachedXY(dx, dy)){
+    if(fabs(delta_orient) < cfg_.goal_tolerance.yaw_goal_tolerance
+      && (!cfg_.goal_tolerance.complete_global_plan || via_points_.size() == 0)
+      && (base_local_planner::stopped(base_odom, cfg_.goal_tolerance.theta_stopped_vel, cfg_.goal_tolerance.trans_stopped_vel)
+          || cfg_.goal_tolerance.free_goal_vel))
+    {
+      goal_reached_ = true;
+      return mbf_msgs::ExePathResult::SUCCESS;
+    }
   }
-
+  
   // check if we should enter any backup mode and apply settings
   configureBackupModes(transformed_plan, goal_idx, dx, dy, is_oscillated_);
     
@@ -475,13 +497,38 @@ bool TebLocalPlannerROS::isGoalReached()
   if (goal_reached_)
   {
     ROS_INFO("GOAL Reached!");
+    has_new_goal_ = true;
     planner_->clearPlanner();
     return true;
   }
   return false;
 }
 
+bool TebLocalPlannerROS::isReachedXY(double dx, double dy)
+{
+  if (check_xy_) {
+    if (dx*dx + dy*dy <= cfg_.goal_tolerance.xy_reached_tolerance*cfg_.goal_tolerance.xy_reached_tolerance) {
+      check_xy_ = false;
+      ROS_INFO("Reached XY!");
+    }
+    else {
+      return false;
+    }
+  }
+  return true;
+}
 
+bool TebLocalPlannerROS::hasGoalChanged(
+  const geometry_msgs::PoseStamped &new_goal)
+{
+  if (last_goal_.header.frame_id != new_goal.header.frame_id) {
+    return true;
+  }
+
+  return last_goal_.pose.position.x != new_goal.pose.position.x
+         || last_goal_.pose.position.y != new_goal.pose.position.y
+         || tf2::getYaw(last_goal_.pose.orientation) != tf2::getYaw(new_goal.pose.orientation);
+}
 
 void TebLocalPlannerROS::updateObstacleContainerWithCostmap()
 {  

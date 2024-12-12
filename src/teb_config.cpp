@@ -89,6 +89,7 @@ void TebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh)
 
   // GoalTolerance
   nh.param("xy_goal_tolerance", goal_tolerance.xy_goal_tolerance, goal_tolerance.xy_goal_tolerance);
+  nh.param("xy_reached_tolerance", goal_tolerance.xy_reached_tolerance, goal_tolerance.xy_reached_tolerance);
   nh.param("yaw_goal_tolerance", goal_tolerance.yaw_goal_tolerance, goal_tolerance.yaw_goal_tolerance);
   nh.param("free_goal_vel", goal_tolerance.free_goal_vel, goal_tolerance.free_goal_vel);
   nh.param("trans_stopped_vel", goal_tolerance.trans_stopped_vel, goal_tolerance.trans_stopped_vel);
@@ -225,6 +226,7 @@ void TebConfig::reconfigure(TebLocalPlannerReconfigureConfig& cfg)
   
   // GoalTolerance
   goal_tolerance.xy_goal_tolerance = cfg.xy_goal_tolerance;
+  goal_tolerance.xy_reached_tolerance = cfg.xy_reached_tolerance;
   goal_tolerance.yaw_goal_tolerance = cfg.yaw_goal_tolerance;
   goal_tolerance.free_goal_vel = cfg.free_goal_vel;
   goal_tolerance.trans_stopped_vel = cfg.trans_stopped_vel;

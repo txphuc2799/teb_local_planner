@@ -117,6 +117,7 @@ public:
   {
     double yaw_goal_tolerance; //!< Allowed final orientation error
     double xy_goal_tolerance; //!< Allowed final euclidean distance to the goal position
+    double xy_reached_tolerance;
     bool free_goal_vel; //!< Allow the robot's velocity to be nonzero (usally max_vel) for planning purposes
     double trans_stopped_vel; //!< Below what maximum velocity we consider the robot to be stopped in translation
     double theta_stopped_vel; //!< Below what maximum rotation velocity we consider the robot to be stopped in rotation
@@ -291,6 +292,7 @@ public:
     // GoalTolerance
 
     goal_tolerance.xy_goal_tolerance = 0.2;
+    goal_tolerance.xy_reached_tolerance = 0.15;
     goal_tolerance.yaw_goal_tolerance = 0.2;
     goal_tolerance.free_goal_vel = false;
     goal_tolerance.trans_stopped_vel = 0.1;

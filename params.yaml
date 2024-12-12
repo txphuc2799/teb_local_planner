@@ -51,7 +51,8 @@ TebLocalPlannerROS:
   acc_lim_y: 0.0                           
 
   # Goal tolerance
-  xy_goal_tolerance: 0.05                  
+  xy_goal_tolerance: 0.05
+  xy_reached_tolerance: 0.15      
   yaw_goal_tolerance: 0.05                 
   free_goal_vel: false      # Allow the robot's velocity to be nonzero for planning purposes 
                             # (the robot can arrive at the goal with max speed)                  

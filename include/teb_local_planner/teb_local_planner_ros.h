@@ -171,6 +171,11 @@ public:
   bool isGoalReached(double xy_tolerance, double yaw_tolerance) { return isGoalReached(); };
 
   /**
+   * @brief Check if robot reaches xy
+   */
+  bool isReachedXY(double dx, double dy);
+
+  /**
     * @brief Requests the planner to cancel, e.g. if it takes too much time
     * @remark New on MBF API
     * @return True if a cancel has been successfully requested, false if not implemented.
@@ -394,7 +399,7 @@ protected:
     double dx, double dy,
     bool & is_oscillated);
 
-
+  bool hasGoalChanged(const geometry_msgs::PoseStamped &new_goal);
   
 private:
   // Definition of member variables
@@ -446,9 +451,14 @@ private:
   std::string global_frame_; //!< The frame in which the controller will run
   std::string robot_base_frame_; //!< Used as the base frame id of the robot
   std::string name_; //!< For use with the ros nodehandle
+
+  geometry_msgs::PoseStamped goal_pose_;
+  geometry_msgs::PoseStamped last_goal_;
     
   // flags
   bool initialized_; //!< Keeps track about the correct initialization of this class
+  bool check_xy_;
+  bool has_new_goal_;
   bool is_oscillated_;
   double oscillating_distance_;
 
