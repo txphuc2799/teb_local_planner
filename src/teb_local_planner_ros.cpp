@@ -139,6 +139,7 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
 
     is_oscillated_ = false;
     oscillating_distance_ = 0.15;
+    max_global_plan_lookahead_ = cfg_.trajectory.max_global_plan_lookahead_dist;
 
     //Initialize a costmap to polygon converter
     if (!cfg_.obstacles.costmap_converter_plugin.empty())
@@ -294,7 +295,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   std::vector<geometry_msgs::PoseStamped> transformed_plan;
   int goal_idx;
   geometry_msgs::TransformStamped tf_plan_to_global;
-  if (!transformGlobalPlan(*tf_, global_plan_, robot_pose, *costmap_, global_frame_, cfg_.trajectory.max_global_plan_lookahead_dist, 
+  if (!transformGlobalPlan(*tf_, global_plan_, robot_pose, *costmap_, global_frame_, max_global_plan_lookahead_, 
                            transformed_plan, &goal_idx, &tf_plan_to_global))
   {
     ROS_WARN("Could not transform the global plan to the frame of the controller");
@@ -374,7 +375,15 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   
   // also consider custom obstacles (must be called after other updates, since the container is not cleared)
   updateObstacleContainerWithCustomObstacles();
+
+  PoseSE2 start(transformed_plan.front().pose);
+  PoseSE2 goal(transformed_plan.back().pose);
   
+  if (cfg_.trajectory.allow_init_with_backwards_motion && (goal.position()-start.position()).dot(start.orientationUnitVec()) < 0) // check if the goal is behind the start pose (w.r.t. start orientation)
+    max_global_plan_lookahead_ = cfg_.trajectory.max_global_plan_lookbackward_dist;
+  else{
+    max_global_plan_lookahead_ = cfg_.trajectory.max_global_plan_lookahead_dist;
+  }
     
   // Do not allow config changes during the following optimization step
   boost::mutex::scoped_lock cfg_lock(cfg_.configMutex());

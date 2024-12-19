@@ -461,6 +461,7 @@ private:
   bool has_new_goal_;
   bool is_oscillated_;
   double oscillating_distance_;
+  double max_global_plan_lookahead_;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

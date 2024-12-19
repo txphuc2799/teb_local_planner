@@ -60,6 +60,7 @@ void TebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh)
     nh.setParam("global_plan_viapoint_sep", trajectory.global_plan_viapoint_sep); // write deprecated value to param server
   nh.param("via_points_ordered", trajectory.via_points_ordered, trajectory.via_points_ordered);
   nh.param("max_global_plan_lookahead_dist", trajectory.max_global_plan_lookahead_dist, trajectory.max_global_plan_lookahead_dist);
+  nh.param("max_global_plan_lookbackward_dist", trajectory.max_global_plan_lookbackward_dist, trajectory.max_global_plan_lookbackward_dist);
   nh.param("global_plan_prune_distance", trajectory.global_plan_prune_distance, trajectory.global_plan_prune_distance);
   nh.param("exact_arc_length", trajectory.exact_arc_length, trajectory.exact_arc_length);
   nh.param("force_reinit_new_goal_dist", trajectory.force_reinit_new_goal_dist, trajectory.force_reinit_new_goal_dist);
@@ -196,6 +197,7 @@ void TebConfig::reconfigure(TebLocalPlannerReconfigureConfig& cfg)
   trajectory.global_plan_viapoint_sep = cfg.global_plan_viapoint_sep;
   trajectory.via_points_ordered = cfg.via_points_ordered;
   trajectory.max_global_plan_lookahead_dist = cfg.max_global_plan_lookahead_dist;
+  trajectory.max_global_plan_lookbackward_dist = cfg.max_global_plan_lookbackward_dist;
   trajectory.exact_arc_length = cfg.exact_arc_length;
   trajectory.force_reinit_new_goal_dist = cfg.force_reinit_new_goal_dist;
   trajectory.force_reinit_new_goal_angular = cfg.force_reinit_new_goal_angular;
